@@ -1,0 +1,51 @@
+//KEY REQUEST SNAC
+TlvChain chain = new TlvChain();
+chain.addBlock( 0x0001, Ascii.parse( screenname ) );
+chain.addBlock( 0x004b, new byte[0] );
+chain.addBlock( 0x005a, new byte[0] );
+
+FLAP.sendSNAC( 0x0017, 0x0006, chain.getBytes() );
+
+
+///LOGGING IN
+// String password
+// byte[] key
+TlvChain chain = new TlvChain();
+chain.addBlock( 0x0001, Aascii.parse( screenname ) );
+chain.addBlock( 0x0025, Authenticate.getHash( password, key ) );
+chain.addBlock( 0x004c, new byte[0] );
+chain.addBlock( 0x000e, Ascii.parse( "us" ) );
+chain.addBlock( 0x000f, Ascii.parse( "en" ) );
+//ClientVersionInfo
+chain.addBlock( 0x0003, Ascii.parse( "AOL Instant Messenger, version 5.9.3702/WIN32" ) );
+chain.addBlock( 0x0016, UnsignedShort.parse( 0x0109 ) );
+chain.addBlock( 0x0017, UnsignedShort.parse( 5 ) );
+chain.addBlock( 0x0018, UnsignedShort.parse( 9 ) );
+chain.addBlock( 0x0019, UnsignedShort.parse( 0 ) );
+chain.addBlock( 0x001a, UnsignedShort.parse( 3702 ) );
+chain.addBlock( 0x0014, UnsignedShort.parse( 272 ) );
+
+FLAP.sendSNAC( 0x0017, 0x0002, chain.getBytes() );
+
+
+
+///SUCCESSFUL LOGIN
+//
+if ( ( snac.getFamily() == 0x0017 ) && ( snac.getType == 0x0003 ) ) {
+    chain = new TlvChain( snac.getData() );
+    String screenname = Ascii.parse( chain.getBlock( 0x0001 ) );
+    if ( chain.containsBlock( 0x0006 ) ) { // authentication cookie
+        // successful login
+        String server = Ascii.parse( chain.getBlock( 0x0005 ) );
+        byte[] cookie = chain.getBlock( 0x0006 );
+        String email = Ascii.parse( chain.getBlock( 0x0011 ) );
+        int regStatus = UnsignedShort.parse( chain.getBlock( 0x0013 ) );
+    } else {
+        // failed login
+        chain = new TlvChain( snac.getData() );
+        String screenname = Ascii.parse( chain.getBlock( 0x0001 ) );
+        int errorCode = UnsignedShort.parse( 0x0008 )
+        String errorUrl = Ascii.parse( chain.getBlock( 0x0004 ) );
+        throw new FailedLoginException( errorCode );
+    }
+}
